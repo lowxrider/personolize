@@ -107,33 +107,49 @@ with tab1:
 # ----------------------------- Вкладка 2: Генератор писем -----------------------------------
 with tab2:
     st.subheader("Генерация персонализированного контента")
+    # Проверка наличия CRM-датасета
+    if "crm_df" not in st.session_state:
+        st.warning("Сначала сгенерируйте CRM-датасет на вкладке 'Датасет CRM'.")
+        st.stop()
+    # Выбор клиента
+    df = st.session_state["crm_df"]
+    options = df.apply(lambda row: f"{row.customer_id} - {row.first_name} {row.last_name} ({row.email})", axis=1).tolist()
+    selected = st.selectbox("Выберите клиента для письма", options)
+    # Извлекаем данные клиента
+    client_id = int(selected.split(" - ")[0])
+    client_data = df[df["customer_id"] == client_id].iloc[0]
+
+    # Инициализация OpenAI клиента
     if "OPENAI_API_KEY" not in st.session_state:
         st.error("Укажите ключ OpenAI в настройках сайдбара.")
         st.stop()
-    # Инициализация клиента OpenAI
     client = OpenAI(api_key=st.session_state["OPENAI_API_KEY"])
 
-    # Кнопка для генерации четверостишия
-    if st.button("Запросить четверостишие", key="btn_tab2"):
+    # Кнопка для генерации письма
+    if st.button("Сгенерировать письмо", key="btn_tab2"):
         try:
+            prompt = (
+                f"Напишите персонализированное электронное письмо для клиента {client_data.first_name} {client_data.last_name},"
+                f" email: {client_data.email}, любимый продукт: {client_data.favorite_product},
+                область сегмента: {client_data.segment}."
+            )
             resp = client.chat.completions.create(
                 model=st.session_state["OPENAI_MODEL"],
                 messages=[
-                    {"role": "system", "content": "Вы — поэт, создающий четверостишия на русском языке."},
-                    {"role": "user", "content": "расскажи четверостишие"}
+                    {"role": "system", "content": "Вы — маркетолог, пишущий дружелюбные и персонализированные письма на русском языке."},
+                    {"role": "user", "content": prompt}
                 ],
                 temperature=st.session_state["OPENAI_TEMPERATURE"],
                 top_p=st.session_state["OPENAI_TOP_P"],
                 max_tokens=st.session_state["OPENAI_MAX_TOKENS"]
             )
-            # Сохраняем результат в сессии
             st.session_state["tab2_output"] = resp.choices[0].message.content.strip()
         except Exception as e:
             st.error(f"Ошибка при запросе к OpenAI: {e}")
 
     # Вывод результата
     output = st.session_state.get("tab2_output", "")
-    st.text_area("Ответ модели", value=output, height=200, key="tab2_output_area", disabled=True)
+    st.text_area("Сгенерированное письмо", value=output, height=200, key="tab2_output_area", disabled=True)
 
 # ----------------------------- Вкладка 3: Библиотека промптов ----------------------
 with tab3:
