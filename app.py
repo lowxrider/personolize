@@ -109,34 +109,31 @@ with tab2:
     st.subheader("Генерация персонализированного контента")
     if "OPENAI_API_KEY" not in st.session_state:
         st.error("Укажите ключ OpenAI в настройках сайдбара.")
-    else:
-        client = OpenAI(api_key=st.session_state["OPENAI_API_KEY"])
+        st.stop()
+    # Инициализация клиента OpenAI
+    client = OpenAI(api_key=st.session_state["OPENAI_API_KEY"])
 
-    response = st.text_area(
-        label="Ответ модели",
-        value=st.session_state.get("tab2_response", ""),
-        height=200,
-        key="tab2_response"
-    )
+    # Кнопка для генерации четверостишия
     if st.button("Запросить четверостишие", key="btn_tab2"):
-        if "OPENAI_API_KEY" not in st.session_state:
-            st.error("Укажите ключ OpenAI в настройках сайдбара.")
-        else:
-            try:
-                resp = client.chat.completions.create(
-                    model=st.session_state["OPENAI_MODEL"],
-                    messages=[
-                        {"role": "system", "content": "Вы — поэт, создающий четверостишия на русском языке."},
-                        {"role": "user", "content": "расскажи четверостишие"}
-                    ],
-                    temperature=st.session_state["OPENAI_TEMPERATURE"],
-                    top_p=st.session_state["OPENAI_TOP_P"],
-                    max_tokens=st.session_state["OPENAI_MAX_TOKENS"]
-                )
-                content = resp.choices[0].message.content.strip()
-                st.session_state["tab2_response"] = content
-            except Exception as e:
-                st.error(f"Ошибка при запросе к OpenAI: {e}")
+        try:
+            resp = client.chat.completions.create(
+                model=st.session_state["OPENAI_MODEL"],
+                messages=[
+                    {"role": "system", "content": "Вы — поэт, создающий четверостишия на русском языке."},
+                    {"role": "user", "content": "расскажи четверостишие"}
+                ],
+                temperature=st.session_state["OPENAI_TEMPERATURE"],
+                top_p=st.session_state["OPENAI_TOP_P"],
+                max_tokens=st.session_state["OPENAI_MAX_TOKENS"]
+            )
+            # Сохраняем результат в сессии
+            st.session_state["tab2_output"] = resp.choices[0].message.content.strip()
+        except Exception as e:
+            st.error(f"Ошибка при запросе к OpenAI: {e}")
+
+    # Вывод результата
+    output = st.session_state.get("tab2_output", "")
+    st.text_area("Ответ модели", value=output, height=200, key="tab2_output_area", disabled=True)
 
 # ----------------------------- Вкладка 3: Библиотека промптов ----------------------
 with tab3:
