@@ -104,48 +104,36 @@ with tab1:
 
 # ----------------------------- Вкладка 2: Генератор писем -----------------------------------
 with tab2:
-    st.subheader("Генерация персонализированных писем")
-    if "crm_df" not in st.session_state:
-        st.info("Сначала сгенерируйте датасет на вкладке 'Датасет CRM'.")
-    else:
-        df = st.session_state["crm_df"]
-        options = df.apply(lambda r: f"{r.customer_id}: {r.first_name} {r.last_name}", axis=1).tolist()
-        selected = st.multiselect("Выберите клиентов для рассылки", options)
-        # Поле для вывода ответа на prompt
-        response_text = st.text_area("Ответ на prompt", value="", height=200, key="prompt_response")
-
-        # Функция генерации темы и текста письма
-        def generate_subject_and_body(user):
-            system_msg = {"role": "system", "content": "Вы — копирайтер маркетинговых писем для кофейного магазина."}
-            user_msg = {"role": "user", "content": (
-                f"Сгенерируй тему и текст email для клиента {user.first_name} {user.last_name}, "
-                f"Верни результат в формате 'Тема: <тема>\nТекст: <текст>'."
-            )}
-            response = openai.ChatCompletion.create(
-                model=st.session_state["OPENAI_MODEL"],
-                messages=[system_msg, user_msg],
-                temperature=st.session_state["OPENAI_TEMPERATURE"],
-                top_p=st.session_state["OPENAI_TOP_P"],
-                max_tokens=st.session_state["OPENAI_MAX_TOKENS"]
-            )
-            return response.choices[0].message.content[0].message.content
-
-        if st.button("Создать письма"):
-            if "OPENAI_API_KEY" not in st.session_state:
-                st.error("Укажите и сохраните ключ OpenAI в настройках.")
-            else:
-                openai.api_key = st.session_state["OPENAI_API_KEY"]
-                all_responses = []
-                for opt in selected:
-                    cid = int(opt.split(":")[0])
-                    user = df[df.customer_id == cid].iloc[0]
-                    content = generate_subject_and_body(user)
-                    all_responses.append(f"Клиент {user.first_name} {user.last_name}:\n{content}")
-                # Отобразить в текстовом поле
-                st.session_state["prompt_response"] = "\n\n".join(all_responses)
-                st.success("Генерация завершена. Ответы отображены выше.")
-
-# ----------------------------- Вкладка 3: Библиотека промптов (заглушка) ----------
+    st.subheader("Генерация персонализированного контента")
+    # Поле для вывода ответа от модели
+    response = st.text_area(
+        label="Ответ модели",
+        value=st.session_state.get("tab2_response", ""),
+        height=200,
+        key="tab2_response"
+    )
+    # Кнопка для выполнения запроса
+    if st.button("Запросить четверостишие", key="btn_tab2"):
+        if "OPENAI_API_KEY" not in st.session_state:
+            st.error("Укажите ключ OpenAI в настройках сайдбара.")
+        else:
+            openai.api_key = st.session_state["OPENAI_API_KEY"]
+            try:
+                resp = openai.ChatCompletion.create(
+                    model=st.session_state["OPENAI_MODEL"],
+                    messages=[
+                        {"role": "system", "content": "Вы — поэт, создающий четверостишия на русском языке."},
+                        {"role": "user", "content": "расскажи четверостишие"}
+                    ],
+                    temperature=st.session_state["OPENAI_TEMPERATURE"],
+                    top_p=st.session_state["OPENAI_TOP_P"],
+                    max_tokens=st.session_state["OPENAI_MAX_TOKENS"]
+                )
+                content = resp.choices[0].message.content
+                st.session_state["tab2_response"] = content
+            except Exception as e:
+                st.error(f"Ошибка при запросе к OpenAI: {e}")
+# ----------------------------- Вкладка 3: Библиотека промптов (заглушка): Библиотека промптов (заглушка) ----------
 with tab3:
     st.subheader("Библиотека промптов — в разработке")
 
