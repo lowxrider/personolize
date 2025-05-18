@@ -124,9 +124,9 @@ with tab2:
     if st.button("Сгенерировать письмо", key="btn_tab2"):
         try:
             prompt = (
-                f"Напишите персонализированное электронное письмо для клиента {client_data.first_name} {client_data.last_name}, "
-                f"email: {client_data.email}, любимый продукт: {client_data.favorite_product}, "
-                f"область сегмента: {client_data.segment}."
+                f"Напишите персонализированное электронное письмо для клиента {client_data.first_name}, "
+                f"У клиента любимый продукт: {client_data.favorite_product}, "
+                f"Клиент из сегмента: {client_data.segment}."
             )
             resp = client.chat.completions.create(
                 model=st.session_state["OPENAI_MODEL"],
